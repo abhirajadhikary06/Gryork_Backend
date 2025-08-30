@@ -1,0 +1,20 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Department Tracking{% endblock %}
+
+{% block content %}
+<h2>Department Tracking</h2>
+<form method="get">
+    <select name="department" class="form-select mb-3">
+        <option value="">All</option>
+        {% for dept in departments %}<option value="{{ dept.id }}" {% if request.GET.department == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>{% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary">Filter</button>
+</form>
+
+<h3>Workers</h3>
+<table class="table"><tbody>{% for worker in workers %}<tr><td>{{ worker.name }}</td></tr>{% endfor %}</tbody></table>
+
+<h3>Works</h3>
+<table class="table"><tbody>{% for work in works %}<tr><td>{{ work.name }}</td></tr>{% endfor %}</tbody></table>
+{% endblock %}

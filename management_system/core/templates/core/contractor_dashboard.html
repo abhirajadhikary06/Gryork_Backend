@@ -1,0 +1,43 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Contractor Dashboard{% endblock %}
+
+{% block content %}
+<h2>Contractor Dashboard</h2>
+
+<!-- Logo Upload -->
+<h3>Upload Logo</h3>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ logo_form.as_p }}
+    <button type="submit" class="btn btn-primary">Upload</button>
+</form>
+{% if user.contractor_profile.logo %}<img src="{{ user.contractor_profile.logo.url }}" alt="Logo" width="100">{% endif %}
+
+<!-- Work Visualization -->
+<canvas id="workChart" width="400" height="200"></canvas>
+<script>
+    const ctx = document.getElementById('workChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{ data: {{ chart_data|safe }}, backgroundColor: ['#ff6384', '#36a2eb', '#ffce56'] }]
+        }
+    });
+</script>
+
+<!-- Department Tracking -->
+<h3>Department Tracking</h3>
+<a href="{% url 'department_tracking' %}">View Departments</a>
+
+<!-- Works Table -->
+<table class="table">
+    <thead><tr><th>Name</th><th>Status</th><th>Department</th></tr></thead>
+    <tbody>
+        {% for work in works %}
+        <tr><td>{{ work.name }}</td><td>{{ work.status }}</td><td>{{ work.department.name }}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

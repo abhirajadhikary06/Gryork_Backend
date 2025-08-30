@@ -1,0 +1,127 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Company Dashboard{% endblock %}
+
+{% block content %}
+<h2>Company Dashboard</h2>
+
+<!-- Analytics Cards -->
+<div class="row">
+    <div class="col-md-3"><div class="card"><div class="card-body">Total Workers: {{ total_workers }}</div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body">Active: {{ active_count }}</div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body">Inactive: {{ inactive_count }}</div></div></div>
+    <div class="col-md-3"><div class="card"><div class="card-body">Departments: {% for dist in dept_dist %}{{ dist.department__name }}: {{ dist.count }}<br>{% endfor %}</div></div></div>
+</div>
+
+<!-- Upload Form -->
+<h3>Import Employee Data</h3>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Upload</button>
+</form>
+
+<!-- Logo Upload -->
+<h3>Upload Logo</h3>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ logo_form.as_p }}
+    <button type="submit" class="btn btn-primary">Upload Logo</button>
+</form>
+{% if user.company_profile.logo %}<img src="{{ user.company_profile.logo.url }}" alt="Logo" width="100">{% endif %}
+
+<!-- Filters Form -->
+<form method="get" class="mb-3">
+    <div class="row">
+        <div class="col"><input type="text" name="search" placeholder="Search by name/role/skill" class="form-control" value="{{ request.GET.search }}"></div>
+        <div class="col">
+            <select name="department" class="form-select">
+                <option value="">All Departments</option>
+                {% for dept in departments %}<option value="{{ dept.id }}" {% if request.GET.department == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col"><input type="text" name="skill" placeholder="Skill" class="form-control" value="{{ request.GET.skill }}"></div>
+        <div class="col"><input type="text" name="location" placeholder="Location" class="form-control" value="{{ request.GET.location }}"></div>
+        <div class="col">
+            <select name="status" class="form-select">
+                <option value="">All Status</option>
+                <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                <option value="on_leave" {% if request.GET.status == 'on_leave' %}selected{% endif %}>On Leave</option>
+            </select>
+        </div>
+        <div class="col"><button type="submit" class="btn btn-primary">Filter</button></div>
+    </div>
+</form>
+
+<!-- Bulk Actions Form -->
+<form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="bulk_action" value="true">
+    {{ bulk_form.as_p }}
+    <button type="submit" class="btn btn-warning">Apply Bulk Action</button>
+
+    <!-- Table -->
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th><input type="checkbox" onclick="document.querySelectorAll('input[name=workers]').forEach(el => el.checked = this.checked)"></th>
+                <th><a href="?order_by=name{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}">Name</a></th>
+                <th><a href="?order_by=role{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}">Role</a></th>
+                <th>Department</th>
+                <th>Skill</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th><a href="?order_by=joining_date{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}">Joining Date</a></th>
+                <th>Tags</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for worker in object_list %}
+            <tr {% if worker.has_missing_fields %}class="table-warning"{% endif %}>
+                <td><input type="checkbox" name="workers" value="{{ worker.id }}"></td>
+                <td>{{ worker.name }}</td>
+                <td>{{ worker.role }}</td>
+                <td>{{ worker.department.name }}</td>
+                <td>{{ worker.skill }}</td>
+                <td>{{ worker.location }}</td>
+                <td>{{ worker.status }}</td>
+                <td>{{ worker.joining_date }}</td>
+                <td>{{ worker.tags }}</td>
+                <td><a href="#" data-bs-toggle="modal" data-bs-target="#profileModal{{ worker.id }}">View Profile</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</form>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<ul class="pagination">
+    {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>{% endif %}
+    <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+    {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>{% endif %}
+</ul>
+{% endif %}
+
+<!-- Export -->
+<a href="{% url 'export_workers' %}" class="btn btn-success">Export to CSV</a>
+
+<!-- Profile Modals -->
+{% for worker in object_list %}
+<div class="modal fade" id="profileModal{{ worker.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5>{{ worker.name }} Profile</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <p>Contact: {{ worker.contact }}</p>
+                <p>Skills: {{ worker.skill }}</p>
+                <p>Assigned Projects: {% for work in worker.company.work_set.all %}{{ work.name }}, {% endfor %}</p>
+                <p>Notes: {{ worker.notes }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

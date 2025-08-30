@@ -1,0 +1,13 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Worker Dashboard{% endblock %}
+
+{% block content %}
+<h2>Worker Dashboard</h2>
+<p>Company: {{ worker.company.user.username }}</p>
+<p>Contractor: {% if worker.contractor %}{{ worker.contractor.user.username }}{% else %}None{% endif %}</p>
+
+<!-- Department Tracking -->
+<h3>Department Tracking</h3>
+<a href="{% url 'department_tracking' %}">View Departments</a>
+{% endblock %}
